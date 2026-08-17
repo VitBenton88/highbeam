@@ -2,6 +2,9 @@
 
 **Highlight anything on the page — without touching the DOM.**
 
+**[Live demo →](https://vitbenton88.github.io/highbeam/)** — search the page,
+then watch React wipe mark.js's highlights while highbeam's survive.
+
 A ~1 kB, dependency-free, framework-agnostic text marker built on the
 [CSS Custom Highlight API](https://developer.mozilla.org/en-US/docs/Web/API/CSS_Custom_Highlight_API).
 It finds your matches — strings, arrays of terms, or regexes, even when they span
