@@ -56,9 +56,6 @@
       "limit": "2.5 kB"
     }
   ],
-  "publishConfig": {
-    "provenance": true
-  },
   "devDependencies": {
     "@size-limit/preset-small-lib": "^13.0.3",
     "@types/mark.js": "^8.11.12",
