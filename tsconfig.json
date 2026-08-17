@@ -12,7 +12,10 @@
     "skipLibCheck": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "types": []
+    "types": [],
+    "paths": {
+      "highbeam": ["./src/index.ts"]
+    }
   },
   "include": ["src", "test", "demo/**/*.tsx"]
 }
