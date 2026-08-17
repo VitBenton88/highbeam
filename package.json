@@ -1,6 +1,6 @@
 {
   "name": "highbeam",
-  "version": "X.Y.Z",
+  "version": "0.1.2",
   "description": "Framework-safe text highlighting built on the CSS Custom Highlight API. Zero DOM mutation.",
   "keywords": [
     "highlight",
