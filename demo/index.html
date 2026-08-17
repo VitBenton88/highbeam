@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>highbeam — highlight text without touching the DOM</title>
+    <meta
+      name="description"
+      content="A 1 kB framework-agnostic text marker built on the CSS Custom Highlight API. Zero DOM mutation."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="hero">
+        <p class="wordmark" aria-label="highbeam">high<span id="beam-mark">beam</span></p>
+        <h1 class="tagline">
+          Highlight anything on the page — <span id="swipe-target">without touching the DOM</span>.
+        </h1>
+        <p class="sub">
+          A 1&hairsp;kB, framework-agnostic text marker built on the
+          <a
+            href="https://developer.mozilla.org/en-US/docs/Web/API/CSS_Custom_Highlight_API"
+            target="_blank"
+            rel="noreferrer"
+            >CSS Custom Highlight API</a
+          >. No spans injected, no framework fights, styled with plain CSS.
+        </p>
+        <div class="install">
+          <code>npm install highbeam</code>
+          <button type="button" id="copy-install" aria-label="Copy install command">copy</button>
+        </div>
+      </header>
+
+      <section class="try" aria-labelledby="try-label">
+        <label class="try-label" id="try-label" for="query">
+          Search this page — every match below paints live, through highbeam itself
+        </label>
+        <div class="try-row">
+          <input
+            id="query"
+            type="text"
+            placeholder="try “headlamp”, or “beam of light”…"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <label class="opt"><input type="checkbox" id="opt-regex" /> regex</label>
+          <label class="opt"><input type="checkbox" id="opt-case" /> match case</label>
+        </div>
+        <p class="count" id="count" role="status">&nbsp;</p>
+
+        <article class="passage" id="passage">
+          <h2>On high beams, briefly</h2>
+          <p>
+            A <em>high beam</em> is the far-reaching setting of a vehicle's <b>head</b>lamp: a beam
+            of light thrown long and wide down an unlit road. Where the low beam politely
+            illuminates the next few meters, the high beam finds everything — sign&shy;posts, stray
+            deer, the road's <em>van</em>ishing point.
+          </p>
+          <p>
+            Text on a page deserves the same treatment. When a reader searches, the matches should
+            light up at once — every occurrence, even a word split across
+            <b>ele</b><i>ment</i> boundaries, even a phrase wrapped onto a new line. The
+            <em>headlamp</em> does not rebuild the road to light it, and a highlighter should not
+            rebuild your DOM to paint it.
+          </p>
+          <p>
+            That is the whole idea here: point the beam of light, sweep it across the text, and
+            leave the markup exactly — <b>exactly</b> — as it was.
+          </p>
+        </article>
+      </section>
+
+      <section class="why">
+        <h2>Why not just wrap matches in spans?</h2>
+        <p>
+          Span injection mutates DOM that your framework believes it owns. React reconciles against
+          nodes that no longer exist; highlights vanish on the next render, or the app throws.
+          highbeam paints through <code>CSS.highlights</code> instead — the DOM is read, never
+          written.
+        </p>
+
+        <div class="compare" id="compare-root">
+          <!-- React comparison mounts here -->
+        </div>
+      </section>
+
+      <section class="use">
+        <h2>Use it</h2>
+        <pre><code><span class="c">// find and paint — returns the match count</span>
+import { Highbeam } from 'highbeam';
+
+const beam = new Highbeam(document.body, { name: 'search' });
+beam.mark('beam of light');   <span class="c">// string, array, or RegExp</span>
+beam.clear();</code></pre>
+        <pre><code><span class="c">/* style it with plain CSS */</span>
+::highlight(search) {
+  background-color: #fff067;
+  color: #16130e;
+}</code></pre>
+        <p class="fine">
+          Works in every modern engine — Chrome 105+, Edge 105+, Safari 17.2+, Firefox 140+. In
+          older browsers <code>mark()</code> quietly does nothing and your page keeps working: check
+          <code>isSupported()</code> if you want to offer a fallback.
+        </p>
+      </section>
+
+      <footer class="foot">
+        <p>MIT licensed. Built by Vit Benton.</p>
+      </footer>
+    </main>
+    <script type="module" src="./main.tsx"></script>
+  </body>
+</html>

@@ -11,7 +11,8 @@
     "verbatimModuleSyntax": true,
     "skipLibCheck": true,
     "noEmit": true,
+    "jsx": "react-jsx",
     "types": []
   },
-  "include": ["src", "test"]
+  "include": ["src", "test", "demo/**/*.tsx"]
 }

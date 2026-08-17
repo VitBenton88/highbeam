@@ -1,0 +1,357 @@
+:root {
+  --paper: #ffffff;
+  --ink: #16130e;
+  --muted: #6b665c;
+  --line: #e8e4da;
+  --beam: #fff067;
+  --marker-pink: #ff9ad5;
+  --font-display: 'Archivo', system-ui, sans-serif;
+  --font-prose: 'Newsreader', georgia, serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+/* The product itself: highlight groups are styled here, in plain CSS. */
+::highlight(page-search) {
+  background-color: var(--beam);
+  color: var(--ink);
+}
+::highlight(swipe) {
+  background-color: var(--beam);
+  color: var(--ink);
+}
+::highlight(logo) {
+  background-color: var(--beam);
+  color: var(--ink);
+}
+::highlight(react-demo) {
+  background-color: var(--marker-pink);
+  color: var(--ink);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 17px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 4.5rem 1.25rem 6rem;
+}
+
+a {
+  color: inherit;
+  text-decoration-thickness: 2px;
+  text-decoration-color: var(--marker-pink);
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  text-decoration-color: var(--ink);
+}
+
+code,
+pre {
+  font-family: var(--font-mono);
+}
+
+/* ---------- hero ---------- */
+
+.wordmark {
+  font-weight: 900;
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
+  margin: 0 0 2.5rem;
+}
+
+.tagline {
+  font-weight: 900;
+  font-size: clamp(2.1rem, 6vw, 3.4rem);
+  line-height: 1.06;
+  letter-spacing: -0.035em;
+  margin: 0 0 1.25rem;
+  text-wrap: balance;
+}
+
+.sub {
+  font-size: 1.06rem;
+  color: var(--muted);
+  max-width: 36rem;
+  margin: 0 0 2rem;
+}
+
+.install {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1.5px solid var(--ink);
+  padding: 0.6rem 0.9rem;
+}
+
+.install code {
+  font-size: 0.95rem;
+}
+
+.install button {
+  font: 500 0.8rem var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border: 0;
+  background: var(--beam);
+  padding: 0.3rem 0.55rem;
+  cursor: pointer;
+}
+
+.install button:hover {
+  background: var(--ink);
+  color: var(--beam);
+}
+
+/* ---------- live search ---------- */
+
+.try {
+  margin-top: 4.5rem;
+}
+
+.try-label {
+  display: block;
+  font: 500 0.8rem var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 0.75rem;
+}
+
+.try-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+}
+
+#query {
+  flex: 1 1 16rem;
+  font: 500 1.1rem var(--font-display);
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  border-bottom: 3px solid var(--ink);
+  padding: 0.45rem 0.1rem;
+}
+
+#query::placeholder {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+#query:focus-visible {
+  outline: none;
+  border-bottom-color: var(--marker-pink);
+}
+
+.opt {
+  font: 400 0.85rem var(--font-mono);
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+}
+
+.opt input {
+  accent-color: var(--ink);
+}
+
+.count {
+  font: 400 0.85rem var(--font-mono);
+  color: var(--muted);
+  min-height: 1.2em;
+  margin: 0.75rem 0 0;
+}
+
+.passage {
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  margin-top: 1.75rem;
+  padding: 0.5rem 0 1.5rem;
+  font-family: var(--font-prose);
+  font-size: 1.22rem;
+  line-height: 1.6;
+}
+
+.passage h2 {
+  font: 700 0.95rem var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 1.5rem 0 0.5rem;
+}
+
+.passage p {
+  margin: 0.9rem 0;
+}
+
+/* ---------- sections ---------- */
+
+.why,
+.use {
+  margin-top: 4.5rem;
+}
+
+.why h2,
+.use h2 {
+  font-weight: 900;
+  font-size: 1.6rem;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.75rem;
+}
+
+.why > p {
+  color: var(--muted);
+  max-width: 38rem;
+  margin: 0 0 2rem;
+}
+
+.why > p code {
+  font-size: 0.9em;
+}
+
+/* React comparison panels (rendered by React) */
+
+.compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+@media (max-width: 40rem) {
+  .compare {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panel {
+  border: 1.5px solid var(--ink);
+  padding: 1.1rem 1.1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.panel h3 {
+  font: 700 1rem var(--font-display);
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.panel h3 small {
+  font: 400 0.72rem var(--font-mono);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.panel ul {
+  font-family: var(--font-prose);
+  font-size: 1.05rem;
+  margin: 0;
+  padding-left: 1.2rem;
+  min-height: 7.5em;
+}
+
+.panel li {
+  margin: 0.25rem 0;
+}
+
+.panel .status {
+  font: 400 0.78rem var(--font-mono);
+  min-height: 2.6em;
+  margin: 0;
+  color: var(--muted);
+}
+
+.panel .status.bad {
+  color: #b3261e;
+}
+
+.panel .status.good {
+  color: #1b6e3d;
+}
+
+.compare-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.compare-actions button {
+  font: 700 0.9rem var(--font-display);
+  border: 1.5px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  padding: 0.55rem 1rem;
+  cursor: pointer;
+}
+
+.compare-actions button:hover {
+  background: var(--beam);
+}
+
+.compare-actions button:focus-visible,
+.install button:focus-visible,
+.opt input:focus-visible {
+  outline: 2px solid var(--marker-pink);
+  outline-offset: 2px;
+}
+
+/* ---------- code ---------- */
+
+.use pre {
+  border: 1px solid var(--line);
+  background: #fbfaf7;
+  padding: 1rem 1.1rem;
+  overflow-x: auto;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  margin: 0 0 1rem;
+}
+
+.use .c {
+  color: var(--muted);
+}
+
+.fine {
+  font-size: 0.9rem;
+  color: var(--muted);
+  max-width: 38rem;
+}
+
+.fine code {
+  font-size: 0.85em;
+}
+
+/* ---------- footer ---------- */
+
+.foot {
+  margin-top: 5rem;
+  border-top: 1px solid var(--line);
+  padding-top: 1.25rem;
+  font: 400 0.85rem var(--font-mono);
+  color: var(--muted);
+}
+
+.foot p {
+  margin: 0;
+}
