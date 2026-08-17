@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased (0.2.0)
+
+- **Live mode**: `new Highbeam(root, { live: true })` re-runs the last
+  `mark()` automatically whenever the DOM under the root changes, via a
+  `MutationObserver`. Mutation bursts coalesce into one re-scan per animation
+  frame, applied before paint. `clear()` pauses observing; `mark()` re-arms;
+  `destroy()` disconnects. Loop-proof by construction — highbeam never mutates
+  the DOM, so it can never trigger itself.
+
 ## 0.1.2 — 2026-08-17
 
 No library changes. First release published automatically via npm trusted

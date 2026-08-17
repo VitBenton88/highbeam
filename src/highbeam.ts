@@ -9,6 +9,12 @@ export interface HighbeamOptions {
   caseSensitive?: boolean;
   /** Return false to exclude a text node from matching. */
   filter?: (node: Text) => boolean;
+  /**
+   * Watch the root with a MutationObserver and automatically re-run the last
+   * mark() when the DOM under it changes. Safe from feedback loops because
+   * highbeam never mutates the DOM. Defaults to false.
+   */
+  live?: boolean;
 }
 
 export type HighbeamRoot = Element | Document | DocumentFragment;
@@ -22,12 +28,13 @@ export class Highbeam {
    * ever adds and removes its own ranges from it.
    */
   #ranges: Range[] = [];
+  #observer: MutationObserver | null = null;
+  #lastQuery: Query | null = null;
+  #rafId: number | null = null;
 
   constructor(root?: HighbeamRoot, options: HighbeamOptions = {}) {
     if (root === null) {
-      throw new TypeError(
-        'highbeam: root is null — pass an element (is your ref set yet?) or omit the argument',
-      );
+      throw new TypeError('highbeam: root is null — is your ref set yet?');
     }
     this.#root = root ?? globalThis.document?.body ?? globalThis.document;
     this.#options = options;
@@ -40,6 +47,8 @@ export class Highbeam {
    */
   mark(query: Query): number {
     if (!isSupported() || !this.#root) return 0;
+    this.#lastQuery = query;
+    if (this.#options.live) this.#observe();
     const index = buildIndex(this.#root, { filter: this.#options.filter });
     const matches = findMatches(index, query, { caseSensitive: this.#options.caseSensitive });
     const doc = this.#root.ownerDocument ?? (this.#root as Document);
@@ -59,8 +68,44 @@ export class Highbeam {
     return matches.length;
   }
 
-  /** Remove this instance's highlights. The group stays registered. */
+  #observe(): void {
+    if (this.#observer) return;
+    this.#observer = new MutationObserver(() => this.#schedule());
+    this.#observer.observe(this.#root as Node, {
+      subtree: true,
+      childList: true,
+      characterData: true,
+    });
+  }
+
+  /**
+   * Coalesce mutation bursts into one re-mark per animation frame; rAF runs
+   * before paint, so the corrected highlights land in the same frame.
+   */
+  #schedule(): void {
+    if (this.#rafId !== null) return;
+    this.#rafId = requestAnimationFrame(() => {
+      this.#rafId = null;
+      if (this.#lastQuery !== null) this.mark(this.#lastQuery);
+    });
+  }
+
+  #disconnect(): void {
+    this.#observer?.disconnect();
+    this.#observer = null;
+    if (this.#rafId !== null) {
+      cancelAnimationFrame(this.#rafId);
+      this.#rafId = null;
+    }
+    this.#lastQuery = null;
+  }
+
+  /**
+   * Remove this instance's highlights and stop live observing (the next
+   * mark() re-arms it). The group stays registered.
+   */
   clear(): void {
+    this.#disconnect();
     if (!isSupported()) return;
     const highlight = CSS.highlights.get(this.name);
     if (highlight) {

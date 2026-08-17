@@ -63,6 +63,9 @@ find-in-page results.
   Ignored for RegExp queries (the regex's own flags decide).
 - `options.filter` — `(node: Text) => boolean`; return `false` to exclude a
   text node. `<script>`, `<style>`, and `<noscript>` content is always excluded.
+- `options.live` — watch the root with a `MutationObserver` and re-run the
+  last `mark()` automatically whenever the DOM under it changes. Defaults to
+  `false`. See [Live mode](#live-mode).
 
 ### `beam.mark(query): number`
 
@@ -89,11 +92,32 @@ Removes highlights and unregisters the group from `CSS.highlights`.
 doesn't, `mark()` quietly does nothing and returns `0` — highlighting degrades
 progressively and your page keeps working.
 
+## Live mode
+
+```ts
+const beam = new Highbeam(chatEl, { live: true });
+beam.mark('fox'); // every fox that ever appears in chatEl stays painted
+```
+
+With `live: true`, highlighting stops being a snapshot: chat messages,
+streamed rows, and re-rendered lists get painted as they appear, with no
+framework wiring. Mutations are coalesced into one re-scan per animation
+frame, applied before paint — no stale-highlight flicker. `clear()` pauses
+observing; the next `mark()` re-arms it; `destroy()` disconnects.
+
+This is a feature only a zero-mutation highlighter can ship: watching the DOM
+is loop-proof precisely because highbeam never writes to it. A span-injection
+library observing the page would trigger itself.
+
 ## Using with frameworks
 
-Frameworks replace text nodes when state changes, which collapses any live
-ranges. The fix is one line: re-mark after render. Since highbeam never mutates
-the DOM, the framework never fights back.
+The simplest option is `live: true` — construct once, mark once, and let the
+observer follow your framework's re-renders, Suspense boundaries, and streamed
+content automatically.
+
+If you'd rather control re-marking explicitly (or want zero observer
+overhead), re-mark after render. Since highbeam never mutates the DOM, the
+framework never fights back.
 
 **React**
 
@@ -128,12 +152,12 @@ watchPostEffect(() => {
 input.addEventListener('input', () => beam.mark(input.value));
 ```
 
-Two React caveats worth knowing: content revealed by an independently
-resolving `<Suspense>`/streaming boundary won't re-trigger an ancestor's
-effect — re-mark from the component that owns the streamed content (a
-`MutationObserver` live mode is planned for exactly this). And content
-rendered through a portal lives outside the ref'd subtree in the real DOM, so
-a ref-scoped instance won't see it — give the portal its own instance.
+Two React caveats worth knowing: with the manual recipe, content revealed by
+an independently resolving `<Suspense>`/streaming boundary won't re-trigger an
+ancestor's effect — use `live: true` for streamed content, which observes the
+DOM itself and needs no effect at all. And content rendered through a portal
+lives outside the ref'd subtree in the real DOM, so a ref-scoped instance
+won't see it — give the portal its own instance.
 
 ## Styling notes
 
@@ -163,8 +187,9 @@ Older browsers: `isSupported()` returns `false` and `mark()` is a no-op.
 
 Known edges, stated plainly so you don't discover them in production:
 
-- **Marks are a snapshot.** If the DOM under the root changes, call `mark()`
-  again (see the framework recipes). A `MutationObserver` live mode is planned.
+- **Without `live: true`, marks are a snapshot.** If the DOM under the root
+  changes, call `mark()` again (see the framework recipes) — or turn on live
+  mode.
 - **Shadow DOM isn't traversed.** Text inside a web component's shadow root is
   invisible to a light-DOM-rooted instance; create an instance per shadow root
   if you need it.
@@ -179,8 +204,8 @@ Known edges, stated plainly so you don't discover them in production:
 
 ## Roadmap
 
-`MutationObserver` live mode · diacritics-insensitive matching ·
-`white-space`-aware indexing · scroll-to-match helpers.
+Diacritics-insensitive matching · `white-space`-aware indexing ·
+scroll-to-match helpers · incremental re-indexing for very large live roots.
 
 ## License
 
