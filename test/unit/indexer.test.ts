@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { buildIndex } from '../../src/indexer';
+import { buildIndex, positionAt } from '../../src/indexer';
 
 function container(html: string): HTMLElement {
   const el = document.createElement('div');
@@ -20,13 +20,55 @@ describe('buildIndex', () => {
     expect(index.text).toBe('A word here');
   });
 
-  test('maps each character back to its source node and offset', () => {
+  test('positionAt maps a text position back to its source node and offset', () => {
     const root = container('<p><b>ab</b>cd</p>');
     const index = buildIndex(root);
     const b = root.querySelector('b')!.firstChild as Text;
     const cd = b.parentNode!.nextSibling as Text;
-    expect(index.map[1]).toEqual({ node: b, offset: 1 });
-    expect(index.map[2]).toEqual({ node: cd, offset: 0 });
+    expect(positionAt(index, 1)).toEqual({ node: b, offset: 1 });
+    expect(positionAt(index, 2)).toEqual({ node: cd, offset: 0 });
+  });
+
+  test('positionAt resolves the first and last characters', () => {
+    const root = container('<p>ab</p><p>cd</p>');
+    const index = buildIndex(root);
+    const first = root.firstChild!.firstChild as Text;
+    const second = root.lastChild!.firstChild as Text;
+    expect(positionAt(index, 0)).toEqual({ node: first, offset: 0 });
+    expect(positionAt(index, index.text.length - 1)).toEqual({ node: second, offset: 1 });
+  });
+
+  test('stores contiguous characters from one node as a single run', () => {
+    const root = container('<p>Hello world</p>');
+    const index = buildIndex(root);
+    expect(index.text).toBe('Hello world');
+    expect(index.runs).toHaveLength(1);
+    expect(index.runs[0]).toMatchObject({ textStart: 0, nodeStart: 0, length: 11 });
+  });
+
+  test('starts a new run at each node boundary', () => {
+    const root = container('<p><b>ab</b>cd</p>');
+    expect(buildIndex(root).runs).toHaveLength(2);
+  });
+
+  test('starts a new run where source characters were skipped', () => {
+    // the collapsed whitespace run leaves a gap in node offsets
+    const root = container('<p>hello\n\t   world</p>');
+    const index = buildIndex(root);
+    expect(index.text).toBe('hello world');
+    expect(index.runs).toHaveLength(2);
+    expect(index.runs[1]).toMatchObject({ textStart: 6, nodeStart: 10, length: 5 });
+  });
+
+  test('positionAt resolves correctly across many runs', () => {
+    const root = container(Array.from({ length: 50 }, (_, i) => `<p>row${i}x</p>`).join(''));
+    const index = buildIndex(root);
+    for (const i of [0, 7, 23, 49]) {
+      const marker = `row${i}x`;
+      const position = positionAt(index, index.text.indexOf(marker));
+      expect(position.node.data).toBe(marker);
+      expect(position.offset).toBe(0);
+    }
   });
 
   test('collapses whitespace runs (newlines, tabs, multiple spaces) to a single space', () => {

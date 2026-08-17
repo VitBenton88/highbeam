@@ -1,4 +1,4 @@
-import { INVISIBLE_CHARS, type TextIndex } from './indexer';
+import { INVISIBLE_CHARS, positionAt, type TextIndex } from './indexer';
 
 export interface MatchPoint {
   node: Text;
@@ -55,10 +55,9 @@ function escapeRegExp(literal: string): string {
 }
 
 function toRange(index: TextIndex, start: number, end: number): MatchRange {
-  const first = index.map[start]!;
-  const last = index.map[end - 1]!;
+  const last = positionAt(index, end - 1);
   return {
-    start: { node: first.node, offset: first.offset },
+    start: positionAt(index, start),
     end: { node: last.node, offset: last.offset + 1 },
   };
 }

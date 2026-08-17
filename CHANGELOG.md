@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased (0.3.0)
+
+### Performance
+
+- **Run-length index.** The text index used to keep one `{node, offset}`
+  record per character; it now keeps one per _run_ of consecutive characters
+  from the same text node, resolved by binary search. A page has thousands of
+  characters per text node, so the table shrinks by orders of magnitude.
+  Measured on a 333,000-character document: `mark()` went from **14.8 ms to
+  11.2 ms**, and heap churn across 20 marks from **45.8 MB to 25.1 MB**. This
+  matters most in live mode, which re-indexes on DOM changes rather than once.
+- Bundle grew ~120 B (now ~1.3 kB brotli / ~1.5 kB gzip); the size budget and
+  every size claim in the README and demo were updated to measured values.
+
+### Types
+
+- `TextIndex.map` is replaced by `TextIndex.runs`, with a new exported
+  `TextRun` type. The functions that produce and consume an index remain
+  internal, so no runtime API changed.
+
 ## 0.2.1 — 2026-08-17
 
 Docs and demo only — no library code changed since 0.2.0.

@@ -1,8 +1,23 @@
+export interface TextRun {
+  /** Source text node for this run. */
+  node: Text;
+  /** Position in `text` where the run starts. */
+  textStart: number;
+  /** Offset within `node` where the run starts. */
+  nodeStart: number;
+  /** Number of characters the run covers. */
+  length: number;
+}
+
 export interface TextIndex {
   /** Searchable text for the indexed subtree, with whitespace runs collapsed. */
   text: string;
-  /** For each character of `text`, the source Text node and the offset within it. */
-  map: { node: Text; offset: number }[];
+  /**
+   * Maps `text` back to the DOM as contiguous spans — one entry per run of
+   * consecutive characters from one node, not one per character. Resolve a
+   * position with `positionAt`.
+   */
+  runs: TextRun[];
 }
 
 export interface IndexOptions {
@@ -21,8 +36,21 @@ export const INVISIBLE_CHARS = /[\u00AD\u200B-\u200D\uFEFF]/;
 
 export function buildIndex(root: Node, options: IndexOptions = {}): TextIndex {
   const { filter } = options;
-  const text: string[] = [];
-  const map: TextIndex['map'] = [];
+  let text = '';
+  const runs: TextRun[] = [];
+  let open: TextRun | null = null;
+
+  /** Append one character, extending the open run when the source is contiguous. */
+  const emit = (char: string, node: Text, offset: number): void => {
+    if (open && open.node === node && open.nodeStart + open.length === offset) {
+      open.length += 1;
+    } else {
+      open = { node, textStart: text.length, nodeStart: offset, length: 1 };
+      runs.push(open);
+    }
+    text += char;
+  };
+
   const doc = root.ownerDocument ?? (root as Document);
   const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
     acceptNode: (node) => {
@@ -43,15 +71,25 @@ export function buildIndex(root: Node, options: IndexOptions = {}): TextIndex {
         continue;
       }
       if (pendingSpace) {
-        if (text.length > 0) {
-          text.push(' ');
-          map.push(pendingSpace);
-        }
+        if (text.length > 0) emit(' ', pendingSpace.node, pendingSpace.offset);
         pendingSpace = null;
       }
-      text.push(char);
-      map.push({ node: node as Text, offset: i });
+      emit(char, node as Text, i);
     }
   }
-  return { text: text.join(''), map };
+  return { text, runs };
+}
+
+/** Resolve a position in `index.text` to its source node and offset. */
+export function positionAt(index: TextIndex, position: number): { node: Text; offset: number } {
+  const { runs } = index;
+  let low = 0;
+  let high = runs.length - 1;
+  while (low < high) {
+    const mid = (low + high + 1) >> 1;
+    if (runs[mid]!.textStart <= position) low = mid;
+    else high = mid - 1;
+  }
+  const run = runs[low]!;
+  return { node: run.node, offset: run.nodeStart + (position - run.textStart) };
 }
