@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (0.2.0)
+## 0.2.0 — 2026-08-17
 
 - **Live mode**: `new Highbeam(root, { live: true })` re-runs the last
   `mark()` automatically whenever the DOM under the root changes, via a
