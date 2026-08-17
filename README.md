@@ -5,7 +5,8 @@
 **[Live demo →](https://vitbenton88.github.io/highbeam/)** — search the page,
 then watch React wipe mark.js's highlights while highbeam's survive.
 
-A ~1 kB, dependency-free, framework-agnostic text marker built on the
+A tiny (~1 kB brotli / ~1.2 kB gzip), dependency-free, framework-agnostic
+text marker built on the
 [CSS Custom Highlight API](https://developer.mozilla.org/en-US/docs/Web/API/CSS_Custom_Highlight_API).
 It finds your matches — strings, arrays of terms, or regexes, even when they span
 element boundaries — and paints them with real browser highlights. No `<span>`
@@ -48,7 +49,7 @@ find-in-page results.
 | Matches across element bounds   | yes                       | partial (`acrossElements`) |
 | Whitespace-tolerant matching    | yes (collapses runs)      | limited                    |
 | Styling                         | plain CSS `::highlight()` | inline styles / classes    |
-| Size (min + brotli)             | ~0.9 kB                   | ~9 kB                      |
+| Size (min + brotli)             | ~1 kB                     | ~9 kB                      |
 | Maintained                      | yes                       | last release 2018          |
 
 ## API
@@ -99,12 +100,19 @@ the DOM, the framework never fights back.
 ```tsx
 const ref = useRef<HTMLElement>(null);
 
-useEffect(() => {
-  const b = new Highbeam(ref.current!, { name: 'search' });
-  b.mark(query);
-  return () => b.destroy();
+// useLayoutEffect, not useEffect: it runs before paint, so the user never
+// sees a frame where new text carries stale highlight ranges.
+useLayoutEffect(() => {
+  if (!ref.current) return; // not rendered yet — nothing to mark
+  const beam = new Highbeam(ref.current, { name: 'search' });
+  beam.mark(query);
+  return () => beam.destroy();
 }, [query, items]); // re-mark whenever the rendered content changes
 ```
+
+Instances are safe to share a `name`: each manages only its own ranges inside
+the group, so two `<SearchableList>`s on one page can both use `'search'` and
+one plain `::highlight(search)` rule styles them all.
 
 **Vue**
 
@@ -119,6 +127,13 @@ watchPostEffect(() => {
 ```ts
 input.addEventListener('input', () => beam.mark(input.value));
 ```
+
+Two React caveats worth knowing: content revealed by an independently
+resolving `<Suspense>`/streaming boundary won't re-trigger an ancestor's
+effect — re-mark from the component that owns the streamed content (a
+`MutationObserver` live mode is planned for exactly this). And content
+rendered through a portal lives outside the ref'd subtree in the real DOM, so
+a ref-scoped instance won't see it — give the portal its own instance.
 
 ## Styling notes
 
@@ -144,11 +159,28 @@ apply — highlights can never cause reflow, which is part of why they're fast.
 
 Older browsers: `isSupported()` returns `false` and `mark()` is a no-op.
 
-## Notes & roadmap
+## Limitations
 
-- Marks are a snapshot: if the DOM under the root changes, call `mark()` again
-  (see framework recipes above). A `MutationObserver`-based live mode is planned.
-- Planned: diacritics-insensitive matching, scroll-to-match helpers.
+Known edges, stated plainly so you don't discover them in production:
+
+- **Marks are a snapshot.** If the DOM under the root changes, call `mark()`
+  again (see the framework recipes). A `MutationObserver` live mode is planned.
+- **Shadow DOM isn't traversed.** Text inside a web component's shadow root is
+  invisible to a light-DOM-rooted instance; create an instance per shadow root
+  if you need it.
+- **`<pre>` whitespace collapses like normal text.** Exact-indentation queries
+  inside code blocks won't match yet; a `white-space`-aware mode is planned.
+- **No Unicode normalization.** NFC page text won't match an NFD query for the
+  same visible characters (rare outside copy-pasted decomposed text).
+- **Form controls don't paint.** `<textarea>`/`<input>` values can't show CSS
+  highlights, so their content is excluded from matching.
+- **Sticky (`y`) regexes** get a `g` flag added and behave surprisingly —
+  don't use them here.
+
+## Roadmap
+
+`MutationObserver` live mode · diacritics-insensitive matching ·
+`white-space`-aware indexing · scroll-to-match helpers.
 
 ## License
 

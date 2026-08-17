@@ -9,6 +9,9 @@ class FakeHighlight {
   add(range: Range) {
     this.ranges.add(range);
   }
+  delete(range: Range) {
+    this.ranges.delete(range);
+  }
   clear() {
     this.ranges.clear();
   }
@@ -96,6 +99,53 @@ describe('Highbeam', () => {
     new Highbeam(root, { name: 'b' }).mark('beta');
     expect(registry.get('a')!.size).toBe(1);
     expect(registry.get('b')!.size).toBe(1);
+  });
+
+  test('same-named instances share one group and re-marking one keeps the other painted', () => {
+    // Regression for the silent-orphan bug: a.mark, b.mark, then a.mark again
+    // must leave BOTH instances' ranges in the single registered group.
+    const a = new Highbeam(container('<p>alpha alpha</p>'), { name: 'shared' });
+    const b = new Highbeam(container('<p>beta</p>'), { name: 'shared' });
+    a.mark('alpha');
+    const group = registry.get('shared')!;
+    b.mark('beta');
+    expect(registry.get('shared')).toBe(group);
+    a.mark('alpha'); // re-mark: replaces a's 2 ranges, must not touch b's
+    expect(registry.get('shared')).toBe(group);
+    expect(group.size).toBe(3);
+    const texts = [...group.ranges].map((r) => r.toString()).sort();
+    expect(texts).toEqual(['alpha', 'alpha', 'beta']);
+  });
+
+  test('mark() re-registers the group if something cleared the registry', () => {
+    const beam = new Highbeam(container('<p>hello</p>'));
+    beam.mark('hello');
+    registry.clear();
+    beam.mark('hello');
+    expect(registry.get('highbeam')!.size).toBe(1);
+  });
+
+  test('destroy() only unregisters the group once no ranges remain in it', () => {
+    const a = new Highbeam(container('<p>one</p>'), { name: 'shared' });
+    const b = new Highbeam(container('<p>two</p>'), { name: 'shared' });
+    a.mark('one');
+    b.mark('two');
+    a.destroy();
+    expect(registry.has('shared')).toBe(true);
+    b.destroy();
+    expect(registry.has('shared')).toBe(false);
+  });
+
+  test('constructor throws a TypeError for an explicit null root', () => {
+    expect(() => new Highbeam(null as never)).toThrow(TypeError);
+  });
+
+  test('default root is document.body, so head/title text is not matched', () => {
+    document.title = 'hello title';
+    document.body.innerHTML = '<p>hello body</p>';
+    const beam = new Highbeam();
+    expect(beam.mark('hello')).toBe(1);
+    document.body.innerHTML = '';
   });
 
   test('passes caseSensitive and filter options through to matching', () => {

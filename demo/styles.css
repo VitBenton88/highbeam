@@ -5,6 +5,9 @@
   --line: #e8e4da;
   --beam: #fff067;
   --marker-pink: #ff9ad5;
+  /* Darker pink for focus rings and underlines: 5:1 on white, where the
+     fluorescent marker pink (1.9:1) is decoration-only. */
+  --marker-deep: #c2367c;
   --font-display: 'Archivo', system-ui, sans-serif;
   --font-prose: 'Newsreader', georgia, serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
@@ -51,7 +54,7 @@ body {
 a {
   color: inherit;
   text-decoration-thickness: 2px;
-  text-decoration-color: var(--marker-pink);
+  text-decoration-color: var(--marker-deep);
   text-underline-offset: 3px;
 }
 
@@ -107,7 +110,7 @@ pre {
   letter-spacing: 0.06em;
   border: 0;
   background: var(--beam);
-  padding: 0.3rem 0.55rem;
+  padding: 0.45rem 0.65rem;
   cursor: pointer;
 }
 
@@ -155,7 +158,7 @@ pre {
 
 #query:focus-visible {
   outline: none;
-  border-bottom-color: var(--marker-pink);
+  border-bottom-color: var(--marker-deep);
 }
 
 .opt {
@@ -312,8 +315,32 @@ pre {
 .compare-actions button:focus-visible,
 .install button:focus-visible,
 .opt input:focus-visible {
-  outline: 2px solid var(--marker-pink);
+  outline: 2px solid var(--marker-deep);
   outline-offset: 2px;
+}
+
+.compare-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.notice {
+  border: 1.5px solid var(--ink);
+  background: var(--beam);
+  padding: 0.75rem 1rem;
+  font: 500 0.9rem var(--font-display);
+  margin: 2rem 0 0;
 }
 
 /* ---------- code ---------- */

@@ -55,6 +55,29 @@ describe('buildIndex', () => {
     expect(index.text).toBe('visible');
   });
 
+  test('skips soft hyphens so visually plain words stay searchable', () => {
+    const root = container('<p>sign­posts ahead</p>');
+    const index = buildIndex(root);
+    expect(index.text).toBe('signposts ahead');
+  });
+
+  test('skips zero-width characters', () => {
+    const root = container('<p>zero​width‌‍join﻿er</p>');
+    const index = buildIndex(root);
+    expect(index.text).toBe('zerowidthjoiner');
+  });
+
+  test('skips text inside textarea and title elements', () => {
+    const root = container('<p>visible</p>');
+    const textarea = document.createElement('textarea');
+    textarea.textContent = 'typed draft';
+    const title = document.createElement('title');
+    title.textContent = 'page title';
+    root.append(textarea, title);
+    const index = buildIndex(root);
+    expect(index.text).toBe('visible');
+  });
+
   test('excludes text nodes rejected by a custom filter', () => {
     const root = container('<p>keep</p><p class="skip">drop</p>');
     const index = buildIndex(root, {

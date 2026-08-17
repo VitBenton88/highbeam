@@ -10,7 +10,14 @@ export interface IndexOptions {
   filter?: ((node: Text) => boolean) | undefined;
 }
 
-const SKIPPED_PARENTS = /^(SCRIPT|STYLE|NOSCRIPT)$/;
+const SKIPPED_PARENTS = /^(SCRIPT|STYLE|NOSCRIPT|TEXTAREA|TITLE)$/;
+
+/**
+ * Soft hyphens and zero-width characters render invisibly, so they are
+ * dropped from the searchable text (and from string queries) to keep
+ * visually plain words matchable.
+ */
+export const INVISIBLE_CHARS = /[\u00AD\u200B-\u200D\uFEFF]/;
 
 export function buildIndex(root: Node, options: IndexOptions = {}): TextIndex {
   const { filter } = options;
@@ -30,6 +37,7 @@ export function buildIndex(root: Node, options: IndexOptions = {}): TextIndex {
     const data = (node as Text).data;
     for (let i = 0; i < data.length; i++) {
       const char = data[i]!;
+      if (INVISIBLE_CHARS.test(char)) continue;
       if (/\s/.test(char)) {
         pendingSpace ??= { node: node as Text, offset: i };
         continue;

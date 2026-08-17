@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { StrictMode, useLayoutEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import Mark from 'mark.js';
 import { Highbeam } from 'highbeam';
@@ -12,13 +12,17 @@ const sightings = (tick: number) => [
 type Status = { text: string; tone: 'neutral' | 'good' | 'bad' };
 
 const waiting: Status = { text: 'waiting — highlight “fox” first', tone: 'neutral' };
+const unsupported: Status = {
+  text: 'this browser doesn’t support the CSS Custom Highlight API',
+  tone: 'bad',
+};
 
-function CompareDemo() {
+function CompareDemo({ supported }: { supported: boolean }) {
   const [tick, setTick] = useState(0);
   const [highlighted, setHighlighted] = useState(false);
   const [generation, setGeneration] = useState(0);
   const [spanStatus, setSpanStatus] = useState<Status>(waiting);
-  const [beamStatus, setBeamStatus] = useState<Status>(waiting);
+  const [beamStatus, setBeamStatus] = useState<Status>(supported ? waiting : unsupported);
 
   const spanList = useRef<HTMLUListElement>(null);
   const beamList = useRef<HTMLUListElement>(null);
@@ -38,14 +42,16 @@ function CompareDemo() {
     beam.current = null;
     setHighlighted(false);
     setSpanStatus(waiting);
-    setBeamStatus(waiting);
+    setBeamStatus(supported ? waiting : unsupported);
     setTick(0);
     setGeneration((g) => g + 1); // remount both lists with fresh DOM
   };
 
-  // After every React render, re-check both panels. Re-marking after a
-  // render is the documented highbeam pattern for framework-managed DOM.
-  useEffect(() => {
+  // Re-mark after every content-changing render, before paint — the
+  // documented highbeam pattern for framework-managed DOM. The DOM
+  // inspection of the mark.js panel below is diagnostic plumbing for this
+  // comparison, not a pattern to copy into application code.
+  useLayoutEffect(() => {
     if (!highlighted) return;
     const count = beam.current!.mark('fox');
     setBeamStatus({
@@ -102,7 +108,7 @@ function CompareDemo() {
       </div>
 
       <div className="compare-actions">
-        <button type="button" onClick={highlight}>
+        <button type="button" onClick={highlight} disabled={!supported}>
           Highlight “fox”
         </button>
         <button type="button" onClick={() => setTick((t) => t + 1)} disabled={!highlighted}>
@@ -116,6 +122,10 @@ function CompareDemo() {
   );
 }
 
-export function mountCompare(rootEl: HTMLElement): void {
-  createRoot(rootEl).render(<CompareDemo />);
+export function mountCompare(rootEl: HTMLElement, supported: boolean): void {
+  createRoot(rootEl).render(
+    <StrictMode>
+      <CompareDemo supported={supported} />
+    </StrictMode>,
+  );
 }

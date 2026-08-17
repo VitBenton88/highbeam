@@ -1,4 +1,4 @@
-import type { TextIndex } from './indexer';
+import { INVISIBLE_CHARS, type TextIndex } from './indexer';
 
 export interface MatchPoint {
   node: Text;
@@ -31,7 +31,10 @@ export function findMatches(
     }
   }
   spans.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
-  return spans.map(([start, end]) => toRange(index, start, end));
+  const unique = spans.filter(
+    (span, i) => i === 0 || span[0] !== spans[i - 1]![0] || span[1] !== spans[i - 1]![1],
+  );
+  return unique.map(([start, end]) => toRange(index, start, end));
 }
 
 function toRegExps(query: Query, options: MatchOptions): RegExp[] {
@@ -42,7 +45,7 @@ function toRegExps(query: Query, options: MatchOptions): RegExp[] {
   const terms = Array.isArray(query) ? query : [query];
   const flags = options.caseSensitive ? 'g' : 'gi';
   return terms
-    .map((term) => term.replace(/\s+/g, ' '))
+    .map((term) => term.replace(new RegExp(INVISIBLE_CHARS, 'g'), '').replace(/\s+/g, ' '))
     .filter((term) => term.length > 0 && term !== ' ')
     .map((term) => new RegExp(escapeRegExp(term), flags));
 }

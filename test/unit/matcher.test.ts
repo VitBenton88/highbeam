@@ -79,6 +79,18 @@ describe('findMatches', () => {
     expect(matches).toHaveLength(3);
   });
 
+  test('deduplicates identical spans from repeated terms', () => {
+    const root = container('<p>the cat sat</p>');
+    const matches = findMatches(buildIndex(root), ['cat', 'cat', 'CAT']);
+    expect(matches).toHaveLength(1);
+  });
+
+  test('ignores soft hyphens and zero-width characters inside string queries', () => {
+    const root = container('<p>signposts</p>');
+    const matches = findMatches(buildIndex(root), 'sign­posts');
+    expect(matches).toHaveLength(1);
+  });
+
   test('skips zero-length RegExp matches instead of looping forever', () => {
     const root = container('<p>abc</p>');
     const matches = findMatches(buildIndex(root), /x*/g);

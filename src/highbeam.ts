@@ -11,14 +11,25 @@ export interface HighbeamOptions {
   filter?: (node: Text) => boolean;
 }
 
+export type HighbeamRoot = Element | Document | DocumentFragment;
+
 export class Highbeam {
   readonly name: string;
-  #root: Node;
+  #root: HighbeamRoot | undefined;
   #options: HighbeamOptions;
-  #highlight: Highlight | null = null;
+  /**
+   * Same-named instances share one registered Highlight; each instance only
+   * ever adds and removes its own ranges from it.
+   */
+  #ranges: Range[] = [];
 
-  constructor(root?: Node, options: HighbeamOptions = {}) {
-    this.#root = root ?? globalThis.document;
+  constructor(root?: HighbeamRoot, options: HighbeamOptions = {}) {
+    if (root === null) {
+      throw new TypeError(
+        'highbeam: root is null — pass an element (is your ref set yet?) or omit the argument',
+      );
+    }
+    this.#root = root ?? globalThis.document?.body ?? globalThis.document;
     this.#options = options;
     this.name = options.name ?? 'highbeam';
   }
@@ -28,36 +39,46 @@ export class Highbeam {
    * instance's previous marks. Returns the number of matches.
    */
   mark(query: Query): number {
-    if (!isSupported()) return 0;
+    if (!isSupported() || !this.#root) return 0;
     const index = buildIndex(this.#root, { filter: this.#options.filter });
     const matches = findMatches(index, query, { caseSensitive: this.#options.caseSensitive });
     const doc = this.#root.ownerDocument ?? (this.#root as Document);
-    if (!this.#highlight) {
-      this.#highlight = new Highlight();
-      CSS.highlights.set(this.name, this.#highlight);
+    let highlight = CSS.highlights.get(this.name);
+    if (!highlight) {
+      highlight = new Highlight();
+      CSS.highlights.set(this.name, highlight);
     }
-    this.#highlight.clear();
-    for (const match of matches) {
+    for (const range of this.#ranges) highlight.delete(range);
+    this.#ranges = matches.map((match) => {
       const range = doc.createRange();
       range.setStart(match.start.node, match.start.offset);
       range.setEnd(match.end.node, match.end.offset);
-      this.#highlight.add(range);
-    }
+      highlight.add(range);
+      return range;
+    });
     return matches.length;
   }
 
   /** Remove this instance's highlights. The group stays registered. */
   clear(): void {
-    this.#highlight?.clear();
+    if (!isSupported()) return;
+    const highlight = CSS.highlights.get(this.name);
+    if (highlight) {
+      for (const range of this.#ranges) highlight.delete(range);
+    }
+    this.#ranges = [];
   }
 
-  /** Remove highlights and unregister the group from CSS.highlights. */
+  /**
+   * Remove this instance's highlights, and unregister the group once no
+   * other instance's ranges remain in it.
+   */
   destroy(): void {
-    if (!this.#highlight) return;
-    this.#highlight.clear();
-    if (CSS.highlights.get(this.name) === this.#highlight) {
+    if (!isSupported()) return;
+    this.clear();
+    const highlight = CSS.highlights.get(this.name);
+    if (highlight && highlight.size === 0) {
       CSS.highlights.delete(this.name);
     }
-    this.#highlight = null;
   }
 }

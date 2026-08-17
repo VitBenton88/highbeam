@@ -6,7 +6,7 @@
     <title>highbeam — highlight text without touching the DOM</title>
     <meta
       name="description"
-      content="A 1 kB framework-agnostic text marker built on the CSS Custom Highlight API. Zero DOM mutation."
+      content="A 1.2 kB framework-agnostic text marker built on the CSS Custom Highlight API. Zero DOM mutation."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -19,12 +19,12 @@
   <body>
     <main class="page">
       <header class="hero">
-        <p class="wordmark" aria-label="highbeam">high<span id="beam-mark">beam</span></p>
+        <p class="wordmark">high<span id="beam-mark">beam</span></p>
         <h1 class="tagline">
           Highlight anything on the page — <span id="swipe-target">without touching the DOM</span>.
         </h1>
         <p class="sub">
-          A 1&hairsp;kB, framework-agnostic text marker built on the
+          A 1.2&hairsp;kB, framework-agnostic text marker built on the
           <a
             href="https://developer.mozilla.org/en-US/docs/Web/API/CSS_Custom_Highlight_API"
             target="_blank"
@@ -34,9 +34,19 @@
         </p>
         <div class="install">
           <code>npm install highbeam</code>
-          <button type="button" id="copy-install" aria-label="Copy install command">copy</button>
+          <button type="button" id="copy-install">copy</button>
+          <span class="sr-only" role="status" id="copy-status"></span>
         </div>
       </header>
+
+      <noscript>
+        <p class="notice">The live demos on this page need JavaScript to run.</p>
+      </noscript>
+      <p class="notice" id="unsupported" hidden>
+        This browser doesn't support the CSS Custom Highlight API yet, so the live demos below can't
+        paint. The library itself degrades the same way: <code>mark()</code> quietly does nothing
+        and your page keeps working.
+      </p>
 
       <section class="try" aria-labelledby="try-label">
         <label class="try-label" id="try-label" for="query">
@@ -89,6 +99,12 @@
         <div class="compare" id="compare-root">
           <!-- React comparison mounts here -->
         </div>
+        <p class="fine">
+          “Why not just re-run mark.js after every render?” Without an <code>unmark()</code> first
+          it progressively nests <code>&lt;mark&gt;</code> tags around already-wrapped text; with
+          one, every render churns the DOM React owns and still flashes unstyled between frames.
+          Re-painting ranges has neither problem — there's nothing to un-inject.
+        </p>
       </section>
 
       <section class="use">
