@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.2 — 2026-08-17
+
+No library changes. First release published automatically via npm trusted
+publishing (GitHub Actions OIDC) — releases now carry provenance attestations.
+
 ## 0.1.1 — 2026-08-17
 
 Fixes from a three-way expert review (library internals, React integration,
