@@ -343,6 +343,97 @@ pre {
   margin: 2rem 0 0;
 }
 
+/* ---------- live mode ---------- */
+
+::highlight(live-chat) {
+  background-color: #a8ff9e;
+  color: var(--ink);
+}
+
+.live {
+  margin-top: 4.5rem;
+}
+
+.live h2 {
+  font-weight: 900;
+  font-size: 1.6rem;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.75rem;
+}
+
+.live > p {
+  color: var(--muted);
+  max-width: 38rem;
+  margin: 0 0 1.5rem;
+}
+
+.live-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.live-controls .try-label {
+  margin: 0;
+}
+
+#live-term {
+  font: 500 1rem var(--font-display);
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  border-bottom: 3px solid var(--ink);
+  padding: 0.3rem 0.1rem;
+  width: 9rem;
+}
+
+#live-term:focus-visible {
+  outline: none;
+  border-bottom-color: var(--marker-deep);
+}
+
+#live-toggle {
+  font: 700 0.85rem var(--font-display);
+  border: 1.5px solid var(--ink);
+  background: var(--paper);
+  padding: 0.4rem 0.9rem;
+  cursor: pointer;
+}
+
+#live-toggle:hover {
+  background: var(--beam);
+}
+
+#live-toggle:focus-visible {
+  outline: 2px solid var(--marker-deep);
+  outline-offset: 2px;
+}
+
+.live-log {
+  border: 1.5px solid var(--ink);
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  min-height: 14em;
+  font-family: var(--font-prose);
+  font-size: 1.05rem;
+}
+
+.live-log li {
+  margin: 0.35rem 0;
+}
+
+.live pre {
+  border: 1px solid var(--line);
+  background: #fbfaf7;
+  padding: 1rem 1.1rem;
+  overflow-x: auto;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
 /* ---------- code ---------- */
 
 .use pre {

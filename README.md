@@ -109,6 +109,11 @@ This is a feature only a zero-mutation highlighter can ship: watching the DOM
 is loop-proof precisely because highbeam never writes to it. A span-injection
 library observing the page would trigger itself.
 
+In background tabs the browser pauses animation frames, so live re-marking
+defers until the tab is visible again — mutations keep being collected, no
+work is wasted on a page nobody can see, and the repaint lands before the
+first visible frame.
+
 ## Using with frameworks
 
 The simplest option is `live: true` — construct once, mark once, and let the

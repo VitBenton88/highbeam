@@ -107,6 +107,23 @@
         </p>
       </section>
 
+      <section class="live">
+        <h2>Set it and forget it</h2>
+        <p>
+          <code>live: true</code> watches the DOM and re-marks automatically — new messages below
+          keep lighting up with zero extra code. Watching the page is loop-proof only because
+          highbeam never writes to it; a span-injecting highlighter would trigger itself.
+        </p>
+        <div class="live-controls">
+          <label class="try-label" for="live-term">live query</label>
+          <input id="live-term" type="text" value="fox" autocomplete="off" spellcheck="false" />
+          <button type="button" id="live-toggle">pause</button>
+        </div>
+        <ul class="live-log" id="live-log"></ul>
+        <pre><code>new Highbeam(logEl, { live: true }).mark(term);
+<span class="c">// that's the entire integration</span></code></pre>
+      </section>
+
       <section class="use">
         <h2>Use it</h2>
         <pre><code><span class="c">// find and paint — returns the match count</span>

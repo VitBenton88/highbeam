@@ -106,3 +106,6 @@ copyButton.addEventListener('click', async () => {
 
 // React comparison
 mountCompare(document.getElementById('compare-root')!, supported);
+
+// Live-mode streaming showcase
+import('./live-demo').then(({ mountLiveDemo }) => mountLiveDemo());
