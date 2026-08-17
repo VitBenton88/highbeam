@@ -1,0 +1,72 @@
+{
+  "name": "highbeam",
+  "version": "0.1.0",
+  "description": "Framework-safe text highlighting built on the CSS Custom Highlight API. Zero DOM mutation.",
+  "keywords": [
+    "highlight",
+    "highlighting",
+    "text",
+    "search",
+    "mark",
+    "css-custom-highlight-api",
+    "custom-highlight-api",
+    "range",
+    "browser"
+  ],
+  "license": "MIT",
+  "author": "Vit Benton",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vitbenton/highbeam.git"
+  },
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "size": "size-limit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "size-limit": [
+    {
+      "path": "dist/index.js",
+      "limit": "2.5 kB"
+    }
+  ],
+  "publishConfig": {
+    "provenance": true
+  },
+  "devDependencies": {
+    "@size-limit/preset-small-lib": "^13.0.3",
+    "@vitest/browser": "^4.1.10",
+    "@vitest/browser-playwright": "^4.1.10",
+    "jsdom": "^30.0.1",
+    "playwright": "^1.62.1",
+    "prettier": "^3.9.6",
+    "size-limit": "^13.0.3",
+    "tsup": "^8.5.1",
+    "typescript": "~5.9.0",
+    "vitest": "^4.1.10"
+  }
+}
