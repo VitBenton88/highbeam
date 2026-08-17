@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.1 — 2026-08-17
+
+Docs and demo only — no library code changed since 0.2.0.
+
+- Demo: a live-mode showcase where messages stream into a log and stay
+  highlighted automatically, with a retargetable query and pause control.
+- README: documents that live re-marking defers while a tab is in the
+  background (animation frames are paused there) and repaints before the
+  first visible frame.
+
 ## 0.2.0 — 2026-08-17
 
 - **Live mode**: `new Highbeam(root, { live: true })` re-runs the last
