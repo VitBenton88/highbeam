@@ -23,6 +23,8 @@ export interface TextIndex {
 export interface IndexOptions {
   /** Return false to exclude a text node from indexing. */
   filter?: ((node: Text) => boolean) | undefined;
+  /** Fold accented letters to their base form. Defaults to true. */
+  diacritics?: boolean | undefined;
 }
 
 const SKIPPED_PARENTS = /^(SCRIPT|STYLE|NOSCRIPT|TEXTAREA|TITLE)$/;
@@ -56,8 +58,40 @@ export function isSpaceCode(code: number): boolean {
   );
 }
 
+/** Returned by {@link foldCode} for a combining mark, which is dropped. */
+export const FOLD_SKIP = -1;
+
+const COMBINING_MARK = /\p{M}/u;
+/** A base character followed only by combining marks — safe to fold 1:1. */
+const FOLDABLE = /^\P{M}\p{M}+$/u;
+const foldCache = new Map<number, number>();
+
+/**
+ * Fold one code unit to its unaccented base, or FOLD_SKIP for a combining
+ * mark. Only 1:1 foldings happen: letters needing an expansion (ß→ss) are
+ * left alone, since a run maps text positions onto node offsets one for one.
+ * Decompositions whose tail isn't all marks are left alone too, which is what
+ * keeps Hangul syllables from folding to their initial jamo.
+ */
+export function foldCode(code: number): number {
+  if (code < 0xc0) return code; // ASCII and controls never fold
+  let folded = foldCache.get(code);
+  if (folded === undefined) {
+    const char = String.fromCharCode(code);
+    const decomposed = char.normalize('NFD');
+    folded = COMBINING_MARK.test(char)
+      ? FOLD_SKIP
+      : FOLDABLE.test(decomposed)
+        ? decomposed.charCodeAt(0)
+        : code;
+    foldCache.set(code, folded);
+  }
+  return folded;
+}
+
 export function buildIndex(root: Node, options: IndexOptions = {}): TextIndex {
   const { filter } = options;
+  const fold = options.diacritics !== false;
   let text = '';
   const runs: TextRun[] = [];
   let open: TextRun | null = null;
@@ -102,9 +136,27 @@ export function buildIndex(root: Node, options: IndexOptions = {}): TextIndex {
         if (space) pendingSpace ??= { node, offset: i };
         continue;
       }
+      const folded = fold ? foldCode(code) : code;
+      if (folded === FOLD_SKIP) {
+        if (chunkStart >= 0) {
+          emit(data.slice(chunkStart, i), node, chunkStart);
+          chunkStart = -1;
+        }
+        continue;
+      }
       if (pendingSpace) {
         if (text.length > 0) emit(' ', pendingSpace.node, pendingSpace.offset);
         pendingSpace = null;
+      }
+      if (folded !== code) {
+        // the folded character differs from the source, so it can't ride
+        // along in a sliced chunk
+        if (chunkStart >= 0) {
+          emit(data.slice(chunkStart, i), node, chunkStart);
+          chunkStart = -1;
+        }
+        emit(String.fromCharCode(folded), node, i);
+        continue;
       }
       if (chunkStart < 0) chunkStart = i;
     }

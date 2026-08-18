@@ -1,4 +1,4 @@
-import { INVISIBLE_CHARS, positionAt, type TextIndex } from './indexer';
+import { FOLD_SKIP, INVISIBLE_CHARS, foldCode, positionAt, type TextIndex } from './indexer';
 
 export interface MatchPoint {
   node: Text;
@@ -16,6 +16,12 @@ export type Query = string | string[] | RegExp;
 export interface MatchOptions {
   /** Match strings exactly by case. Defaults to false. Ignored for RegExp queries. */
   caseSensitive?: boolean | undefined;
+  /**
+   * Fold accented letters in the query, matching how the index was built.
+   * Defaults to true. RegExp queries are never folded — they run against the
+   * folded text as written.
+   */
+  diacritics?: boolean | undefined;
 }
 
 export function findMatches(
@@ -44,10 +50,22 @@ function toRegExps(query: Query, options: MatchOptions): RegExp[] {
   }
   const terms = Array.isArray(query) ? query : [query];
   const flags = options.caseSensitive ? 'g' : 'gi';
+  const fold = options.diacritics !== false;
   return terms
+    .map((term) => (fold ? foldTerm(term) : term))
     .map((term) => term.replace(new RegExp(INVISIBLE_CHARS, 'g'), '').replace(/\s+/g, ' '))
     .filter((term) => term.length > 0 && term !== ' ')
     .map((term) => new RegExp(escapeRegExp(term), flags));
+}
+
+/** Fold a query the same way the index was folded, code unit by code unit. */
+function foldTerm(term: string): string {
+  let out = '';
+  for (let i = 0; i < term.length; i++) {
+    const folded = foldCode(term.charCodeAt(i));
+    if (folded !== FOLD_SKIP) out += String.fromCharCode(folded);
+  }
+  return out;
 }
 
 function escapeRegExp(literal: string): string {

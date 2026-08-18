@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased (0.5.0)
+
+- **Diacritics folding**, on by default. `'cafe'` matches `café` and `'café'`
+  matches `cafe` — the page text and the query are folded through the same
+  per-code-unit function, so the two can't disagree. Pass
+  `diacritics: false` to match exactly what was authored.
+  - Folding is 1:1 by design: `é→e`, `ñ→n`, and combining marks in decomposed
+    text are dropped. Letters needing an _expansion_ (`ß→ss`, `æ→ae`) are left
+    alone, because a run maps text positions onto node offsets one for one.
+  - A decomposition is only folded when everything after the base is a
+    combining mark. That guard is what keeps Hangul syllables from folding to
+    their initial jamo — `한` stays `한`, and CJK and Cyrillic are untouched.
+  - No lookup table: folding rides on `normalize('NFD')` and Unicode property
+    escapes, cached per code unit, with everything below U+00C0 short-circuited
+    so ASCII text barely notices (measured 4.3 → 4.6 ms on a 333,000-character
+    page).
+  - **RegExp queries are not folded** — they run against the folded text, so
+    write `/cafe/` rather than `/café/`. Documented in Limitations.
+- Bundle is now ~1.8 kB brotli / ~2 kB gzip; budget and size claims updated.
+
 ## 0.4.1 — 2026-08-18
 
 Docs and tests only — no library code changed.

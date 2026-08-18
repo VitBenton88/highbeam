@@ -5,7 +5,7 @@
 **[Live demo →](https://vitbenton88.github.io/highbeam/)** — search the page,
 then watch React wipe mark.js's highlights while highbeam's survive.
 
-A tiny (~1.6 kB brotli / ~1.8 kB gzip), dependency-free, framework-agnostic
+A tiny (~1.8 kB brotli / ~2 kB gzip), dependency-free, framework-agnostic
 text marker built on the
 [CSS Custom Highlight API](https://developer.mozilla.org/en-US/docs/Web/API/CSS_Custom_Highlight_API).
 It finds your matches — strings, arrays of terms, or regexes, even when they span
@@ -49,7 +49,7 @@ find-in-page results.
 | Matches across element bounds   | yes                       | partial (`acrossElements`) |
 | Whitespace-tolerant matching    | yes (collapses runs)      | limited                    |
 | Styling                         | plain CSS `::highlight()` | inline styles / classes    |
-| Size (min + brotli)             | ~1.6 kB                   | ~9 kB                      |
+| Size (min + brotli)             | ~1.8 kB                   | ~9 kB                      |
 | Maintained                      | yes                       | last release 2018          |
 
 ## API
@@ -68,6 +68,8 @@ find-in-page results.
   `false`. See [Live mode](#live-mode).
 - `options.shadow` — also index open shadow roots beneath the root. Defaults
   to `false`. See [Shadow DOM](#shadow-dom).
+- `options.diacritics` — fold accented letters so `'cafe'` matches `café`.
+  Defaults to `true`. See [Diacritics](#diacritics).
 
 ### `beam.mark(query): number`
 
@@ -115,6 +117,27 @@ In background tabs the browser pauses animation frames, so live re-marking
 defers until the tab is visible again — mutations keep being collected, no
 work is wasted on a page nobody can see, and the repaint lands before the
 first visible frame.
+
+## Diacritics
+
+```ts
+beam.mark('cafe'); // matches café, and 'café' matches cafe
+```
+
+Accented letters are folded to their base form on both sides — the page text
+and your query — so searches work regardless of which form the user types.
+Pass `diacritics: false` to match exactly what was authored.
+
+Folding is deliberately 1:1: `é→e`, `ñ→n`, `ç→c`, and combining marks in
+decomposed text are dropped. Letters that would need to _expand_ are left
+alone — `ß` does not match `ss`, `æ` does not match `ae` — because a matched
+range maps text positions onto DOM offsets one for one, and an expansion
+would break that. Scripts whose decomposition isn't a base plus marks are
+untouched too, so Hangul syllables stay whole rather than folding to jamo.
+
+Two things worth knowing: **RegExp queries aren't folded** (they run against
+the folded text, so write `/cafe/`, not `/café/`), and with decomposed text a
+trailing combining mark can fall just outside the painted range.
 
 ## Shadow DOM
 
@@ -231,8 +254,9 @@ Known edges, stated plainly so you don't discover them in production:
   `/\s{4}/` won't find whitespace the index collapsed away. String queries are
   unaffected: they're normalized the same way the index is, so `'a b'` matches
   `a    b` and text split across lines — inside `<pre>` too.
-- **No Unicode normalization.** NFC page text won't match an NFD query for the
-  same visible characters (rare outside copy-pasted decomposed text).
+- **Diacritic folding is 1:1 only.** `ß`/`æ`/`œ` are not expanded to `ss`/`ae`/`oe`
+  (see [Diacritics](#diacritics)), and RegExp queries run against the folded
+  text.
 - **Form controls don't paint.** `<textarea>`/`<input>` values can't show CSS
   highlights, so their content is excluded from matching.
 - **Sticky (`y`) regexes** get a `g` flag added and behave surprisingly —
@@ -240,7 +264,7 @@ Known edges, stated plainly so you don't discover them in production:
 
 ## Roadmap
 
-Diacritics-insensitive matching · scroll-to-match helpers.
+Scroll-to-match helpers.
 
 ## License
 

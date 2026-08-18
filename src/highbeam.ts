@@ -10,6 +10,11 @@ export interface HighbeamOptions {
   /** Return false to exclude a text node from matching. */
   filter?: (node: Text) => boolean;
   /**
+   * Fold accented letters so 'cafe' matches 'café', on both the page and the
+   * query. Defaults to true. RegExp queries run against the folded text.
+   */
+  diacritics?: boolean;
+  /**
    * Watch the root with a MutationObserver and automatically re-run the last
    * mark() when the DOM under it changes. Safe from feedback loops because
    * highbeam never mutates the DOM. Defaults to false.
@@ -64,8 +69,14 @@ export class Highbeam {
     for (const range of this.#ranges) highlight.delete(range);
     const ranges: Range[] = [];
     for (const root of roots) {
-      const index = buildIndex(root, { filter: this.#options.filter });
-      const matches = findMatches(index, query, { caseSensitive: this.#options.caseSensitive });
+      const index = buildIndex(root, {
+        filter: this.#options.filter,
+        diacritics: this.#options.diacritics,
+      });
+      const matches = findMatches(index, query, {
+        caseSensitive: this.#options.caseSensitive,
+        diacritics: this.#options.diacritics,
+      });
       const doc = root.ownerDocument ?? (root as Document);
       for (const match of matches) {
         const range = doc.createRange();
