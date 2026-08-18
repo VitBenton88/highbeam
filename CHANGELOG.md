@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (0.4.1)
+## 0.4.1 — 2026-08-18
 
 Docs and tests only — no library code changed.
 
