@@ -5,7 +5,7 @@
 **[Live demo →](https://vitbenton88.github.io/highbeam/)** — search the page,
 then watch React wipe mark.js's highlights while highbeam's survive.
 
-A tiny (~1.8 kB brotli / ~2 kB gzip), dependency-free, framework-agnostic
+A tiny (~2.1 kB brotli / ~2.4 kB gzip), dependency-free, framework-agnostic
 text marker built on the
 [CSS Custom Highlight API](https://developer.mozilla.org/en-US/docs/Web/API/CSS_Custom_Highlight_API).
 It finds your matches — strings, arrays of terms, or regexes, even when they span
@@ -49,7 +49,7 @@ find-in-page results.
 | Matches across element bounds   | yes                       | partial (`acrossElements`) |
 | Whitespace-tolerant matching    | yes (collapses runs)      | limited                    |
 | Styling                         | plain CSS `::highlight()` | inline styles / classes    |
-| Size (min + brotli)             | ~1.8 kB                   | ~9 kB                      |
+| Size (min + brotli)             | ~2.1 kB                   | ~9 kB                      |
 | Maintained                      | yes                       | last release 2018          |
 
 ## API
@@ -70,6 +70,10 @@ find-in-page results.
   to `false`. See [Shadow DOM](#shadow-dom).
 - `options.diacritics` — fold accented letters so `'cafe'` matches `café`.
   Defaults to `true`. See [Diacritics](#diacritics).
+- `options.currentName` — group name for the active match. Defaults to
+  `` `${name}-current` ``. See [Navigating matches](#navigating-matches).
+- `options.scroll` — `ScrollIntoViewOptions` used when activating a match, or
+  `false` to never scroll. Defaults to `{ block: 'center' }`.
 
 ### `beam.mark(query): number`
 
@@ -81,6 +85,16 @@ replaces the instance's previous marks.
   lines, indentation, and inline tags like `hel<b>lo wor</b>ld`.
 - `beam.mark(['foo', 'bar'])` — every occurrence of every term.
 - `beam.mark(/colou?r/gi)` — regex over the page's collapsed text.
+
+### `beam.next()` · `beam.previous()` · `beam.goTo(index)`
+
+Activate a match, scroll it into view, and return its index (`-1` when there
+are no matches). See [Navigating matches](#navigating-matches).
+
+### `beam.count` · `beam.current`
+
+The number of matches from the last `mark()`, and the active match's index
+(`-1` when none is active).
 
 ### `beam.clear()`
 
@@ -117,6 +131,41 @@ In background tabs the browser pauses animation frames, so live re-marking
 defers until the tab is visible again — mutations keep being collected, no
 work is wasted on a page nobody can see, and the repaint lands before the
 first visible frame.
+
+## Navigating matches
+
+```ts
+const beam = new Highbeam(article, { name: 'search' });
+beam.mark('fox'); // → 5
+
+next.onclick = () => beam.next(); // wraps at the end
+prev.onclick = () => beam.previous(); // wraps at the start
+label.textContent = `${beam.current + 1} of ${beam.count}`;
+```
+
+```css
+::highlight(search) {
+  background-color: #fff067;
+}
+::highlight(search-current) {
+  background-color: #ff9ad5;
+} /* the active one */
+```
+
+The active match joins a second highlight group — `` `${name}-current` `` by
+default — which carries a higher priority, so it paints over the main group.
+That's the find-in-page pattern: every match tinted, the current one
+standing out.
+
+Activating a match scrolls it into view. highbeam scrolls the _containing
+element_ with `scrollIntoView({ block: 'center' })`, which respects nested
+scroll containers and `scroll-margin`, then nudges the page if the match
+itself is still off screen inside a very tall block. Pass
+`scroll: { behavior: 'smooth' }` to customize, or `scroll: false` to move the
+active match without touching the viewport.
+
+The usual trick for scrolling to a text range — inserting a marker element —
+would mutate the DOM, so highbeam measures the range instead.
 
 ## Diacritics
 
@@ -264,7 +313,7 @@ Known edges, stated plainly so you don't discover them in production:
 
 ## Roadmap
 
-Scroll-to-match helpers.
+Nothing planned — open an issue if something's missing.
 
 ## License
 

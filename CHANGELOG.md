@@ -2,6 +2,21 @@
 
 ## Unreleased (0.5.0)
 
+- **Match navigation.** `next()`, `previous()` and `goTo(index)` activate a
+  match, scroll it into view, and return its index; `count` and `current`
+  report where you are. Stepping past either end wraps, and stepping back
+  from nothing lands on the last match, like find-in-page.
+  - The active match joins a second, higher-priority highlight group
+    (`` `${name}-current` `` by default), so one CSS rule tints every match
+    and another makes the current one stand out. Verified in Chromium that
+    `Highlight.priority` arbitrates overlapping groups and that a single
+    `Range` can belong to both.
+  - Scrolling moves the containing element with
+    `scrollIntoView({ block: 'center' })` — respecting nested scroll
+    containers and `scroll-margin` — then nudges the page when the match is
+    still off screen inside a tall block. `scroll: false` disables it. The
+    usual approach of inserting a marker element to scroll to would mutate the
+    DOM, which the library exists not to do, so it measures the range instead.
 - **Diacritics folding**, on by default. `'cafe'` matches `café` and `'café'`
   matches `cafe` — the page text and the query are folded through the same
   per-code-unit function, so the two can't disagree. Pass
@@ -18,7 +33,8 @@
     page).
   - **RegExp queries are not folded** — they run against the folded text, so
     write `/cafe/` rather than `/café/`. Documented in Limitations.
-- Bundle is now ~1.8 kB brotli / ~2 kB gzip; budget and size claims updated.
+- Bundle is now ~2.1 kB brotli / ~2.4 kB gzip; budget and size claims updated.
+  Indexing speed is unchanged (4.6 ms on a 333,000-character page).
 
 ## 0.4.1 — 2026-08-18
 

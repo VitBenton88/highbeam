@@ -26,12 +26,24 @@ export interface HighbeamOptions {
    * unreachable. Defaults to false.
    */
   shadow?: boolean;
+  /**
+   * Highlight group name for the active match, styled via
+   * ::highlight(<currentName>). Defaults to `<name>-current`.
+   */
+  currentName?: string;
+  /**
+   * How to scroll the active match into view, or false to leave scrolling
+   * alone. Defaults to `{ block: 'center' }`.
+   */
+  scroll?: ScrollIntoViewOptions | false;
 }
 
 export type HighbeamRoot = Element | Document | DocumentFragment;
 
 export class Highbeam {
   readonly name: string;
+  /** Highlight group name for the active match. */
+  readonly currentName: string;
   #root: HighbeamRoot | undefined;
   #options: HighbeamOptions;
   /**
@@ -42,6 +54,8 @@ export class Highbeam {
   #observer: MutationObserver | null = null;
   #lastQuery: Query | null = null;
   #rafId: number | null = null;
+  #current = -1;
+  #currentRange: Range | null = null;
 
   constructor(root?: HighbeamRoot, options: HighbeamOptions = {}) {
     if (root === null) {
@@ -50,6 +64,81 @@ export class Highbeam {
     this.#root = root ?? globalThis.document?.body ?? globalThis.document;
     this.#options = options;
     this.name = options.name ?? 'highbeam';
+    this.currentName = options.currentName ?? `${this.name}-current`;
+  }
+
+  /** Number of matches from the last mark(). */
+  get count(): number {
+    return this.#ranges.length;
+  }
+
+  /** Index of the active match, or -1 when none is active. */
+  get current(): number {
+    return this.#current;
+  }
+
+  /** Activate the next match, wrapping at the end. Returns its index. */
+  next(): number {
+    return this.goTo(this.#current + 1);
+  }
+
+  /** Activate the previous match, wrapping at the start. Returns its index. */
+  previous(): number {
+    // with nothing active yet, stepping back lands on the last match
+    return this.goTo(this.#current < 0 ? -1 : this.#current - 1);
+  }
+
+  /**
+   * Activate a match by index, wrapping out-of-range values, and scroll it
+   * into view. Returns the active index, or -1 when there are no matches.
+   */
+  goTo(index: number): number {
+    const total = this.#ranges.length;
+    if (!isSupported() || total === 0) return -1;
+    this.#current = ((index % total) + total) % total;
+    this.#paintCurrent();
+    this.#scrollToCurrent();
+    return this.#current;
+  }
+
+  /** Move the active range into its own group, which outranks the main one. */
+  #paintCurrent(): void {
+    let group = CSS.highlights.get(this.currentName);
+    if (!group) {
+      group = new Highlight();
+      group.priority = 1;
+      CSS.highlights.set(this.currentName, group);
+    }
+    if (this.#currentRange) group.delete(this.#currentRange);
+    this.#currentRange = this.#ranges[this.#current] ?? null;
+    if (this.#currentRange) group.add(this.#currentRange);
+  }
+
+  #scrollToCurrent(): void {
+    const scroll = this.#options.scroll;
+    if (scroll === false) return;
+    const range = this.#currentRange;
+    if (!range) return;
+    range.startContainer.parentElement?.scrollIntoView(scroll ?? { block: 'center' });
+    // Scrolling the containing element can still leave the match off screen
+    // inside a very tall block, so nudge by the range's own rect. This is an
+    // enhancement: if rects aren't measurable, navigation still works.
+    const rect = range.getBoundingClientRect?.();
+    const viewport = globalThis.innerHeight ?? 0;
+    if (rect && viewport > 0 && (rect.bottom < 0 || rect.top > viewport)) {
+      globalThis.scrollBy({
+        top: rect.top - viewport / 2,
+        behavior: (scroll && scroll.behavior) || 'auto',
+      });
+    }
+  }
+
+  /** Drop the active match, leaving the main highlights alone. */
+  #clearCurrent(): void {
+    const group = CSS.highlights.get(this.currentName);
+    if (group && this.#currentRange) group.delete(this.#currentRange);
+    this.#currentRange = null;
+    this.#current = -1;
   }
 
   /**
@@ -86,6 +175,7 @@ export class Highbeam {
         ranges.push(range);
       }
     }
+    this.#clearCurrent();
     this.#ranges = ranges;
     return ranges.length;
   }
@@ -149,6 +239,7 @@ export class Highbeam {
   clear(): void {
     this.#disconnect();
     if (!isSupported()) return;
+    this.#clearCurrent();
     const highlight = CSS.highlights.get(this.name);
     if (highlight) {
       for (const range of this.#ranges) highlight.delete(range);
@@ -166,6 +257,10 @@ export class Highbeam {
     const highlight = CSS.highlights.get(this.name);
     if (highlight && highlight.size === 0) {
       CSS.highlights.delete(this.name);
+    }
+    const current = CSS.highlights.get(this.currentName);
+    if (current && current.size === 0) {
+      CSS.highlights.delete(this.currentName);
     }
   }
 }
