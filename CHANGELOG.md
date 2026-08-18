@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (0.5.0)
+## 0.5.0 — 2026-08-18
 
 - **Match navigation.** `next()`, `previous()` and `goTo(index)` activate a
   match, scroll it into view, and return its index; `count` and `current`
