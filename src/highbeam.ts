@@ -15,6 +15,12 @@ export interface HighbeamOptions {
    * highbeam never mutates the DOM. Defaults to false.
    */
   live?: boolean;
+  /**
+   * Also index open shadow roots beneath the root. Matches never span a
+   * shadow boundary (a Range cannot), and closed shadow roots are
+   * unreachable. Defaults to false.
+   */
+  shadow?: boolean;
 }
 
 export type HighbeamRoot = Element | Document | DocumentFragment;
@@ -48,34 +54,59 @@ export class Highbeam {
   mark(query: Query): number {
     if (!isSupported() || !this.#root) return 0;
     this.#lastQuery = query;
-    if (this.#options.live) this.#observe();
-    const index = buildIndex(this.#root, { filter: this.#options.filter });
-    const matches = findMatches(index, query, { caseSensitive: this.#options.caseSensitive });
-    const doc = this.#root.ownerDocument ?? (this.#root as Document);
+    const roots = this.#collectRoots();
+    if (this.#options.live) this.#observe(roots);
     let highlight = CSS.highlights.get(this.name);
     if (!highlight) {
       highlight = new Highlight();
       CSS.highlights.set(this.name, highlight);
     }
     for (const range of this.#ranges) highlight.delete(range);
-    this.#ranges = matches.map((match) => {
-      const range = doc.createRange();
-      range.setStart(match.start.node, match.start.offset);
-      range.setEnd(match.end.node, match.end.offset);
-      highlight.add(range);
-      return range;
-    });
-    return matches.length;
+    const ranges: Range[] = [];
+    for (const root of roots) {
+      const index = buildIndex(root, { filter: this.#options.filter });
+      const matches = findMatches(index, query, { caseSensitive: this.#options.caseSensitive });
+      const doc = root.ownerDocument ?? (root as Document);
+      for (const match of matches) {
+        const range = doc.createRange();
+        range.setStart(match.start.node, match.start.offset);
+        range.setEnd(match.end.node, match.end.offset);
+        highlight.add(range);
+        ranges.push(range);
+      }
+    }
+    this.#ranges = ranges;
+    return ranges.length;
   }
 
-  #observe(): void {
-    if (this.#observer) return;
-    this.#observer = new MutationObserver(() => this.#schedule());
-    this.#observer.observe(this.#root as Node, {
-      subtree: true,
-      childList: true,
-      characterData: true,
-    });
+  /**
+   * The root, plus every open shadow root beneath it when `shadow` is on.
+   * Each tree is indexed separately, so no match can straddle a boundary.
+   */
+  #collectRoots(): HighbeamRoot[] {
+    const roots: HighbeamRoot[] = [this.#root!];
+    if (!this.#options.shadow) return roots;
+    const doc = this.#root!.ownerDocument ?? (this.#root as Document);
+    for (let i = 0; i < roots.length; i++) {
+      const walker = doc.createTreeWalker(roots[i]!, NodeFilter.SHOW_ELEMENT);
+      for (let el = walker.nextNode(); el; el = walker.nextNode()) {
+        const shadow = (el as Element).shadowRoot;
+        if (shadow) roots.push(shadow);
+      }
+    }
+    return roots;
+  }
+
+  /** One observer watches every tree; re-observing a target is a no-op. */
+  #observe(roots: HighbeamRoot[]): void {
+    this.#observer ??= new MutationObserver(() => this.#schedule());
+    for (const root of roots) {
+      this.#observer.observe(root as Node, {
+        subtree: true,
+        childList: true,
+        characterData: true,
+      });
+    }
   }
 
   /**

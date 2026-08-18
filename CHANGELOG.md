@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased (0.4.0)
+
+- **Shadow DOM support.** `new Highbeam(root, { shadow: true })` indexes the
+  root plus every open shadow root beneath it, nested ones included, so text
+  inside web components can be highlighted. Opt-in — default behavior is
+  unchanged, and nobody pays for the extra element walk unless they ask for it.
+  - One document-level `::highlight()` rule still styles everything: highlight
+    pseudo-elements inherit across shadow boundaries (verified in Chromium
+    before building the feature).
+  - Each tree is indexed separately, because a `Range` whose ends are in
+    different trees silently collapses to nothing. Matches therefore never
+    span a shadow boundary, and closed shadow roots stay unreachable — both
+    documented rather than left to be discovered.
+  - Live mode observes every shadow root too, and picks up roots attached
+    later on the next re-mark.
+- Bundle is now ~1.6 kB brotli / ~1.8 kB gzip; budget and size claims updated
+  to measured values.
+
 ## 0.3.1 — 2026-08-17
 
 ### Performance

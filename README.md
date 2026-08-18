@@ -5,7 +5,7 @@
 **[Live demo →](https://vitbenton88.github.io/highbeam/)** — search the page,
 then watch React wipe mark.js's highlights while highbeam's survive.
 
-A tiny (~1.5 kB brotli / ~1.6 kB gzip), dependency-free, framework-agnostic
+A tiny (~1.6 kB brotli / ~1.8 kB gzip), dependency-free, framework-agnostic
 text marker built on the
 [CSS Custom Highlight API](https://developer.mozilla.org/en-US/docs/Web/API/CSS_Custom_Highlight_API).
 It finds your matches — strings, arrays of terms, or regexes, even when they span
@@ -49,7 +49,7 @@ find-in-page results.
 | Matches across element bounds   | yes                       | partial (`acrossElements`) |
 | Whitespace-tolerant matching    | yes (collapses runs)      | limited                    |
 | Styling                         | plain CSS `::highlight()` | inline styles / classes    |
-| Size (min + brotli)             | ~1.5 kB                   | ~9 kB                      |
+| Size (min + brotli)             | ~1.6 kB                   | ~9 kB                      |
 | Maintained                      | yes                       | last release 2018          |
 
 ## API
@@ -66,6 +66,8 @@ find-in-page results.
 - `options.live` — watch the root with a `MutationObserver` and re-run the
   last `mark()` automatically whenever the DOM under it changes. Defaults to
   `false`. See [Live mode](#live-mode).
+- `options.shadow` — also index open shadow roots beneath the root. Defaults
+  to `false`. See [Shadow DOM](#shadow-dom).
 
 ### `beam.mark(query): number`
 
@@ -113,6 +115,33 @@ In background tabs the browser pauses animation frames, so live re-marking
 defers until the tab is visible again — mutations keep being collected, no
 work is wasted on a page nobody can see, and the repaint lands before the
 first visible frame.
+
+## Shadow DOM
+
+```ts
+const beam = new Highbeam(appEl, { shadow: true });
+beam.mark('fox'); // finds matches inside open shadow roots too
+```
+
+Web components keep their text behind a shadow root, where an ordinary tree
+walk can't reach. With `shadow: true`, highbeam indexes the root plus every
+open shadow root beneath it, nested ones included.
+
+Styling stays simple: highlight pseudo-elements inherit across shadow
+boundaries, so one document-level `::highlight(name)` rule paints matches
+inside components too — no need to inject styles into each root.
+
+Two limits come from the platform rather than from highbeam:
+
+- **Matches never span a shadow boundary.** A `Range` with ends in different
+  trees silently collapses to nothing, so each tree is indexed on its own.
+  Text that looks continuous across a component boundary won't match as one
+  phrase.
+- **Closed shadow roots stay unreachable.** `element.shadowRoot` is `null` for
+  them by design; nothing outside the component can read that text.
+
+With `live: true`, every shadow root is observed as well, and roots attached
+later are picked up on the next re-mark.
 
 ## Using with frameworks
 
@@ -195,9 +224,9 @@ Known edges, stated plainly so you don't discover them in production:
 - **Without `live: true`, marks are a snapshot.** If the DOM under the root
   changes, call `mark()` again (see the framework recipes) — or turn on live
   mode.
-- **Shadow DOM isn't traversed.** Text inside a web component's shadow root is
-  invisible to a light-DOM-rooted instance; create an instance per shadow root
-  if you need it.
+- **Shadow DOM is opt-in.** Pass `shadow: true` to reach open shadow roots;
+  closed ones are unreachable and matches can't span a boundary (see
+  [Shadow DOM](#shadow-dom)).
 - **`<pre>` whitespace collapses like normal text.** Exact-indentation queries
   inside code blocks won't match yet; a `white-space`-aware mode is planned.
 - **No Unicode normalization.** NFC page text won't match an NFD query for the
