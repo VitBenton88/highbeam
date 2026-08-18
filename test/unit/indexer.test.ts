@@ -1,5 +1,11 @@
 import { describe, expect, test } from 'vitest';
-import { buildIndex, positionAt } from '../../src/indexer';
+import {
+  buildIndex,
+  positionAt,
+  isSpaceCode,
+  isInvisibleCode,
+  INVISIBLE_CHARS,
+} from '../../src/indexer';
 
 function container(html: string): HTMLElement {
   const el = document.createElement('div');
@@ -120,11 +126,51 @@ describe('buildIndex', () => {
     expect(index.text).toBe('visible');
   });
 
+  test('indexes non-ASCII text and collapses full-width spaces', () => {
+    const root = container('<p>\u4e1c\u4eac\u3000\u90fd\u5e02</p>');
+    const index = buildIndex(root);
+    expect(index.text).toBe('\u4e1c\u4eac \u90fd\u5e02');
+    // one run: a single whitespace character keeps the node offsets contiguous
+    expect(index.runs).toHaveLength(1);
+  });
+
   test('excludes text nodes rejected by a custom filter', () => {
     const root = container('<p>keep</p><p class="skip">drop</p>');
     const index = buildIndex(root, {
       filter: (node) => !(node.parentElement?.classList.contains('skip') ?? false),
     });
     expect(index.text).toBe('keep');
+  });
+});
+
+describe('character classification', () => {
+  // The scanner classifies by code unit instead of running regexes per
+  // character. These lock that the numeric predicates stay exactly
+  // equivalent to the regex semantics they replaced.
+  const BMP_LIMIT = 0x3100; // past every whitespace code point in the set
+  const EXTRA = [0x4e00, 0xd7ff, 0xfeff, 0xfffd];
+
+  test('isSpaceCode agrees with the \\s regex on every relevant code point', () => {
+    const mismatches: string[] = [];
+    const check = (c: number) => {
+      if (isSpaceCode(c) !== /\s/.test(String.fromCharCode(c))) {
+        mismatches.push(`U+${c.toString(16).toUpperCase().padStart(4, '0')}`);
+      }
+    };
+    for (let c = 0; c <= BMP_LIMIT; c++) check(c);
+    EXTRA.forEach(check);
+    expect(mismatches).toEqual([]);
+  });
+
+  test('isInvisibleCode agrees with the INVISIBLE_CHARS regex', () => {
+    const mismatches: string[] = [];
+    const check = (c: number) => {
+      if (isInvisibleCode(c) !== INVISIBLE_CHARS.test(String.fromCharCode(c))) {
+        mismatches.push(`U+${c.toString(16).toUpperCase().padStart(4, '0')}`);
+      }
+    };
+    for (let c = 0; c <= BMP_LIMIT; c++) check(c);
+    EXTRA.forEach(check);
+    expect(mismatches).toEqual([]);
   });
 });

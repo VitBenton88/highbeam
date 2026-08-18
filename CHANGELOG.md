@@ -1,5 +1,28 @@
 # Changelog
 
+## Unreleased (0.3.1)
+
+### Performance
+
+- **Code-unit scanning.** Indexing used to pull each character out as a
+  one-character string and test it against two regexes. It now classifies by
+  `charCodeAt` and copies whole spans with `slice`, so scanning allocates
+  nothing per character. On the same 333,000-character document:
+
+  |                       | 0.2.1   | 0.3.0   | 0.3.1       |
+  | --------------------- | ------- | ------- | ----------- |
+  | time per `mark()`     | 14.8 ms | 11.2 ms | **4.3 ms**  |
+  | heap churn / 20 marks | 45.8 MB | 25.1 MB | **19.9 MB** |
+
+  A full re-index of a large page now fits comfortably inside one animation
+  frame, which is what live mode needs.
+
+- The whitespace and invisible-character classifiers are numeric predicates
+  covering exactly the code points their regexes matched; a test asserts that
+  equivalence across every code point up to U+3100 so the two can't drift.
+- Bundle grew ~150 B (now ~1.5 kB brotli / ~1.6 kB gzip) — size claims and the
+  budget updated to measured values.
+
 ## 0.3.0 — 2026-08-17
 
 ### Performance

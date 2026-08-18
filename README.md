@@ -5,7 +5,7 @@
 **[Live demo →](https://vitbenton88.github.io/highbeam/)** — search the page,
 then watch React wipe mark.js's highlights while highbeam's survive.
 
-A tiny (~1.3 kB brotli / ~1.5 kB gzip), dependency-free, framework-agnostic
+A tiny (~1.5 kB brotli / ~1.6 kB gzip), dependency-free, framework-agnostic
 text marker built on the
 [CSS Custom Highlight API](https://developer.mozilla.org/en-US/docs/Web/API/CSS_Custom_Highlight_API).
 It finds your matches — strings, arrays of terms, or regexes, even when they span
@@ -49,7 +49,7 @@ find-in-page results.
 | Matches across element bounds   | yes                       | partial (`acrossElements`) |
 | Whitespace-tolerant matching    | yes (collapses runs)      | limited                    |
 | Styling                         | plain CSS `::highlight()` | inline styles / classes    |
-| Size (min + brotli)             | ~1.3 kB                   | ~9 kB                      |
+| Size (min + brotli)             | ~1.5 kB                   | ~9 kB                      |
 | Maintained                      | yes                       | last release 2018          |
 
 ## API
@@ -210,8 +210,7 @@ Known edges, stated plainly so you don't discover them in production:
 ## Roadmap
 
 Diacritics-insensitive matching · `white-space`-aware indexing ·
-scroll-to-match helpers · incremental re-indexing for very large live roots ·
-code-unit scanning to cut the remaining per-character allocation.
+scroll-to-match helpers · incremental re-indexing for very large live roots.
 
 ## License
 
