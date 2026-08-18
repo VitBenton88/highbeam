@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (0.4.0)
+## 0.4.0 — 2026-08-18
 
 - **Shadow DOM support.** `new Highbeam(root, { shadow: true })` indexes the
   root plus every open shadow root beneath it, nested ones included, so text
