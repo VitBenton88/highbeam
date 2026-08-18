@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased (0.4.1)
+
+Docs and tests only — no library code changed.
+
+- **Corrected a false limitation.** The README claimed exact-indentation
+  queries can't match inside `<pre>`. They can, and always could: the index
+  and string queries collapse whitespace identically, so they agree even
+  though the index diverges from the rendered text. Verified in Chromium —
+  `'    return 1;'`, a phrase spanning a newline, and a multi-space query in a
+  `white-space: pre-wrap` block all match.
+- The real caveat is now documented in its place: **RegExp** queries run
+  against the collapsed text, so `/\n/` and `/\s{4}/` can't match whitespace
+  that was collapsed away.
+- Tests lock all of the above, including the regex caveat, so the claim can't
+  drift again.
+- `white-space`-aware indexing is dropped from the roadmap: it would fix only
+  the narrow regex case, at the cost of a `getComputedStyle` per text-bearing
+  element (measured ~1.2 ms per index on a 5,000-element page) and a change to
+  string-matching semantics.
+
 ## 0.4.0 — 2026-08-18
 
 - **Shadow DOM support.** `new Highbeam(root, { shadow: true })` indexes the

@@ -227,8 +227,10 @@ Known edges, stated plainly so you don't discover them in production:
 - **Shadow DOM is opt-in.** Pass `shadow: true` to reach open shadow roots;
   closed ones are unreachable and matches can't span a boundary (see
   [Shadow DOM](#shadow-dom)).
-- **`<pre>` whitespace collapses like normal text.** Exact-indentation queries
-  inside code blocks won't match yet; a `white-space`-aware mode is planned.
+- **RegExp queries run against whitespace-collapsed text.** `/\n/` or
+  `/\s{4}/` won't find whitespace the index collapsed away. String queries are
+  unaffected: they're normalized the same way the index is, so `'a b'` matches
+  `a    b` and text split across lines — inside `<pre>` too.
 - **No Unicode normalization.** NFC page text won't match an NFD query for the
   same visible characters (rare outside copy-pasted decomposed text).
 - **Form controls don't paint.** `<textarea>`/`<input>` values can't show CSS
@@ -238,8 +240,7 @@ Known edges, stated plainly so you don't discover them in production:
 
 ## Roadmap
 
-Diacritics-insensitive matching · `white-space`-aware indexing ·
-scroll-to-match helpers · incremental re-indexing for very large live roots.
+Diacritics-insensitive matching · scroll-to-match helpers.
 
 ## License
 

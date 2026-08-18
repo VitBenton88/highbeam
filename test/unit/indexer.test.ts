@@ -6,6 +6,7 @@ import {
   isInvisibleCode,
   INVISIBLE_CHARS,
 } from '../../src/indexer';
+import { findMatches } from '../../src/matcher';
 
 function container(html: string): HTMLElement {
   const el = document.createElement('div');
@@ -172,5 +173,38 @@ describe('character classification', () => {
     for (let c = 0; c <= BMP_LIMIT; c++) check(c);
     EXTRA.forEach(check);
     expect(mismatches).toEqual([]);
+  });
+});
+
+describe('preformatted text', () => {
+  // Whitespace diverges from what <pre> renders, but the index and string
+  // queries are normalized the same way, so matching stays consistent.
+  const code = () => {
+    const el = document.createElement('div');
+    el.innerHTML = '<pre>function f() {\n    return 1;\n}</pre>';
+    return el;
+  };
+
+  test('an exactly indented line still matches', () => {
+    const index = buildIndex(code());
+    expect(findMatches(index, '    return 1;')).toHaveLength(1);
+  });
+
+  test('a phrase spanning a newline still matches', () => {
+    const index = buildIndex(code());
+    expect(findMatches(index, 'f() { return')).toHaveLength(1);
+  });
+
+  test('a multi-space query matches a multi-space run', () => {
+    const el = document.createElement('div');
+    el.innerHTML = '<div style="white-space: pre-wrap">alpha    beta</div>';
+    expect(findMatches(buildIndex(el), 'alpha    beta')).toHaveLength(1);
+  });
+
+  test('RegExp queries cannot match whitespace the index collapsed', () => {
+    const index = buildIndex(code());
+    expect(findMatches(index, /return 1;\n/)).toHaveLength(0);
+    expect(findMatches(index, /\s{4}return/)).toHaveLength(0);
+    expect(findMatches(index, /\{ return/)).toHaveLength(1); // single space is present
   });
 });
